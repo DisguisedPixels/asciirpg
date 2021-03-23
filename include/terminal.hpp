@@ -1,6 +1,6 @@
 #pragma once
 
-#include <main.hpp>
+#include <import.hpp>
 
 class Terminal
 {
@@ -35,6 +35,13 @@ class Terminal
         int win_height;
         int win_width;
 
+        int menu;
+        int state;
+        int substate;
+
+        WINDOW* win_bar;
+        WINDOW* win_main;
+
         Terminal()
         {
             setup();
@@ -49,7 +56,7 @@ class Terminal
         {
             initscr();
             noecho();
-            raw();
+            //raw();
             curs_set(0);
             keypad(stdscr, TRUE);
             mousemask(ALL_MOUSE_EVENTS, NULL);
@@ -63,6 +70,17 @@ class Terminal
             running = true;
             last_bg = "";
             last_fg = "";
+
+            menu = 0;
+            state = 0;
+            substate = 0;
+
+            
+
+            getmaxyx(stdscr, win_height, win_width);
+
+            win_bar = newwin(4,win_width,0,0);
+            win_main = newwin(win_height,win_width,0,0);
         }
 
         void teardown()
@@ -72,12 +90,16 @@ class Terminal
 
         void start_draw()
         {
+            wclear(win_bar);
+            wclear(win_main);
             clear();
         }
 
         void end_draw()
         {
             refresh();
+            wrefresh(win_main);
+            wrefresh(win_bar);
         }
 
         void startcolor(WINDOW * win, const std::string& background, const std::string& foreground)
