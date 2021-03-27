@@ -1,10 +1,70 @@
 #include <import.hpp>
 #include <terminal.hpp>
+#include <datamanager.hpp>
+#include <utils.hpp>
 
+Terminal terminal;
+DataManager data;
+
+void tick_passed()
+{
+    // Wait
+    usleep(0.5*terminal.ms);
+
+    // Logic
+    if(terminal.is_running())
+    {
+        terminal.second += 1;
+        if(!terminal.pause)
+        {
+            terminal.draw_refresh(data.game);
+        }
+    }
+    else
+    {
+        std::terminate();
+    }
+
+    // Replay
+    tick_passed();
+}
+
+bool load_data()
+{
+    int result = data.read_json(terminal.PATH + "/bin/data/json");
+    if(result == 1)
+    {
+        terminal.draw_refresh(data.game);
+        mvwprintw(terminal.win_main,2,1,"Loading error: files not located");
+        terminal.end_draw();
+        getch();
+        return false;
+    }
+    else if(result == 2)
+    {
+        terminal.draw_refresh(data.game);
+        mvwprintw(terminal.win_main,2,1,"Loading error: file format error");
+        terminal.end_draw();
+        getch();
+        return false;
+    }
+
+    return true;
+}
 
 int main()
 {
-    Terminal terminal;
+    if(!load_data())
+    {
+        return 1;
+    }
+
+    data.save_init("Test");
+
+    std::thread tick_thread (tick_passed);
+    tick_thread.detach();
+
+    Terminal* term = &terminal;
     
     while(terminal.is_running())
     {
@@ -18,26 +78,7 @@ int main()
 
 
         /* RENDER     */
-        terminal.start_draw();
-
-        switch(terminal.menu)
-        {
-            case 0:
-            {
-                wresize(terminal.win_bar,4,terminal.win_width);
-                wresize(terminal.win_main,terminal.win_height,terminal.win_width);
-
-                terminal.startcolor(stdscr, "black", "white");
-                wborder(terminal.win_main,0,0,0,0,0,0,0,0);
-                wborder(terminal.win_bar,0,0,0,0,0,0,0,0);
-
-                mvwprintw(terminal.win_bar,1,1,"asciirpg/menu/main");
-                terminal.endcolor(stdscr);
-                break;
-            }
-        }
-
-        terminal.end_draw();
+        terminal.draw_refresh(data.game);
 
 
 
@@ -45,40 +86,38 @@ int main()
         int input = terminal.get_key();
         switch(input)
         {
-            case KEY_F(1):
+        case KEY_F(1):
+        {
+            terminal.quit();
+            break;
+        }
+        default:
+        {
+        switch(terminal.menu)
+        {
+            case 0:
             {
-                terminal.quit();
-                break;
-            }
-            default:
-            {
-                switch(terminal.menu)
+                switch(input)
                 {
-                    case 0:
+                    case 't':
                     {
-                        switch(input)
-                        {
-                            case 't':
-                            {
-                                terminal.menu = 1;
-                            }
-                        }
+                        data.game.id = terminal.get_string();
                         break;
                     }
-                    case 1:
+                    case 'q':
                     {
-                        switch(input)
+                        if(in_array("a",{"a","test"}));
                         {
-                            case 'q':
-                            {
-                                terminal.menu = 0;
-                            }
+                            return 0;
                         }
                         break;
                     }
                 }
                 break;
             }
+        }
+        break;
+        }
         }
     }
 

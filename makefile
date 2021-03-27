@@ -1,6 +1,6 @@
 CXX         := g++
 
-BIN         := bin
+BIN         := bin/bin
 SRC         := src
 INCLUDE     := include
 LIB         := lib

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <import.hpp>
+#include <datamanager.hpp>
 
 class Terminal
 {
@@ -32,6 +33,7 @@ class Terminal
         }
 
     public:
+        std::string PATH;
         int win_height;
         int win_width;
 
@@ -41,6 +43,12 @@ class Terminal
 
         WINDOW* win_bar;
         WINDOW* win_main;
+
+        int ms = 1000000;
+        int second = 0;
+
+        bool pause;
+
 
         Terminal()
         {
@@ -71,11 +79,16 @@ class Terminal
             last_bg = "";
             last_fg = "";
 
+            PATH = std::filesystem::current_path();
+
             menu = 0;
             state = 0;
             substate = 0;
 
-            
+            //nodelay(stdscr, TRUE);
+            // use this to break the game!!
+
+            pause = false;
 
             getmaxyx(stdscr, win_height, win_width);
 
@@ -90,9 +103,9 @@ class Terminal
 
         void start_draw()
         {
-            wclear(win_bar);
-            wclear(win_main);
-            clear();
+            werase(win_bar);
+            werase(win_main);
+            //erase();
         }
 
         void end_draw()
@@ -143,9 +156,59 @@ class Terminal
             return wgetch(stdscr);
         }
 
+        std::string get_string()
+        {
+            std::string input;
+
+            nocbreak();
+            echo();
+            curs_set(1);
+            pause = true;
+
+            move(win_height-2,1);
+            int ch = getch();
+
+            while ( ch != '\n' )
+            {
+                input.push_back( ch );
+                ch = getch();
+            }
+
+            cbreak();
+            noecho();
+            curs_set(0);
+            pause = false;
+
+            return input;
+        }
+
         int get_color(const std::string& background, const std::string& foreground)
         {
             std::string color_name = background + "-" + foreground;
             return m_colors[color_name];
+        }
+
+        void draw_refresh(SaveGameStruct &data)
+        {
+            start_draw();
+
+            switch(menu)
+            {
+                case 0:
+                {
+                    wresize(win_bar,4,win_width);
+                    wresize(win_main,win_height,win_width);
+
+                    startcolor(stdscr, "black", "white");
+                    wborder(win_main,0,0,0,0,0,0,0,0);
+                    wborder(win_bar,0,0,0,0,0,0,0,0);
+
+                    mvwprintw(win_bar,1,1,"Name: %s | Level: %d", data.id.c_str(), second);
+                    endcolor(stdscr);
+                    break;
+                }
+            }
+
+            end_draw();
         }
 };
