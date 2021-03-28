@@ -2,6 +2,7 @@
 
 #include <import.hpp>
 #include <datamanager.hpp>
+#include <utils.hpp>
 
 class Terminal
 {
@@ -38,17 +39,38 @@ class Terminal
         int win_width;
 
         int menu;
-        int state;
-        int substate;
+        int submenu;
+
+        int character_max;
 
         WINDOW* win_bar;
         WINDOW* win_main;
+        WINDOW* win_side;
 
         int ms = 1000000;
-        int second = 0;
+        int tick = 0;
 
         bool pause;
 
+        Json::Value location;
+        
+        int read_json(const std::string& PATH)
+        {
+            std::ifstream json1(PATH + "/location.json");
+            if (json1.fail())
+            {
+                return 1;
+            }
+            try
+            {
+                json1 >> location;
+            }
+            catch(const Json::RuntimeError& e)
+            {
+                return 2;
+            }
+            return 0;
+        }
 
         Terminal()
         {
@@ -82,18 +104,20 @@ class Terminal
             PATH = std::filesystem::current_path();
 
             menu = 0;
-            state = 0;
-            substate = 0;
+            submenu = 0;
 
-            //nodelay(stdscr, TRUE);
+            character_max = 5;
+
+            nodelay(stdscr, FALSE);
             // use this to break the game!!
 
             pause = false;
 
             getmaxyx(stdscr, win_height, win_width);
 
-            win_bar = newwin(4,win_width,0,0);
             win_main = newwin(win_height,win_width,0,0);
+            win_side = newwin(win_height-3,30,3,0);
+            win_bar = newwin(4,win_width,0,0);
         }
 
         void teardown()
@@ -103,8 +127,9 @@ class Terminal
 
         void start_draw()
         {
-            werase(win_bar);
             werase(win_main);
+            werase(win_side);
+            werase(win_bar);
             //erase();
         }
 
@@ -112,6 +137,7 @@ class Terminal
         {
             refresh();
             wrefresh(win_main);
+            wrefresh(win_side);
             wrefresh(win_bar);
         }
 
@@ -198,12 +224,67 @@ class Terminal
                 {
                     wresize(win_bar,4,win_width);
                     wresize(win_main,win_height,win_width);
+                    wresize(win_side,win_height-3,30);
 
                     startcolor(stdscr, "black", "white");
                     wborder(win_main,0,0,0,0,0,0,0,0);
+                    wborder(win_side,0,0,0,0,0,0,0,0);
                     wborder(win_bar,0,0,0,0,0,0,0,0);
 
-                    mvwprintw(win_bar,1,1,"Name: %s | Level: %d", data.id.c_str(), second);
+                    mvwprintw(win_bar,1,1,"ASCII RPG");
+                    switch(submenu)
+                    {
+                        case 0:
+                        {
+                            break;
+                        }
+                    }
+                    endcolor(stdscr);
+                    break;
+                }
+                case 1:
+                {
+                    wresize(win_bar,4,win_width);
+                    wresize(win_main,win_height,win_width);
+                    wresize(win_side,win_height-3,30);
+
+                    startcolor(stdscr, "black", "white");
+                    wborder(win_main,0,0,0,0,0,0,0,0);
+                    wborder(win_side,0,0,0,0,0,0,0,0);
+                    wborder(win_bar,0,0,0,0,0,0,0,0);
+
+                    PlayerStruct current_char = data.characters[data.current_char-1];
+
+                    mvwprintw(win_bar,1,1,"ASCII RPG | Profile: %s", data.id.c_str());
+                    mvwprintw(win_bar,2,1,"%s LVL%d | Party: (%d/%d)", current_char.name.c_str(), current_char.level,data.characters.size(),character_max);
+                    std::string location_1 = json2str(location[data.location]["name"][0]);
+                    std::string location_2 = json2str(location[data.location]["name"][1]);
+                    std::string location_3 = json2str(location[data.location]["name"][2]);
+                    unsigned int size = location_1.size() + location_2.size() + location_3.size() + 8;
+                    mvwprintw(win_bar,1,win_width-size,"%s / %s / %s",location_1.c_str(),location_2.c_str(),location_3.c_str());
+                    switch(submenu)
+                    {
+                        case 0:
+                        {
+                            mvwprintw(win_side,1,1,"Main");
+                            mvwprintw(win_side,3,1,"ESC:Exit");
+                            mvwprintw(win_side,4,1,"c:Select Character");
+                            break;
+                        }
+                        case 1:
+                        {
+                            mvwprintw(win_side,1,1,"Select Character");
+                            mvwprintw(win_side,3,1,"ESC:Back");
+                            mvwprintw(win_side,4,1,"1-%d: Select Character",data.characters.size());
+
+                            for (int i = 0; i < data.characters.size(); i++)
+                            {
+                                mvwprintw(win_main,4+i,30,"%d | %s LVL%d",i+1,data.characters[i].name.c_str(),data.characters[i].level);
+                            }
+
+                            break;
+                        }
+                    }
                     endcolor(stdscr);
                     break;
                 }

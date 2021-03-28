@@ -9,13 +9,16 @@ struct LocationStruct
 
 struct PlayerStruct
 {
+    std::string name;
     unsigned int level;
 };
 
 struct SaveGameStruct
 {
     std::string id;
-    PlayerStruct player;
+    std::vector <PlayerStruct> characters {};
+    unsigned int current_char;
+    std::string location;
 };
 
 class DataManager
@@ -23,27 +26,6 @@ class DataManager
     private:
     public:
         SaveGameStruct game;
-        Json::Value location;
-        Json::Value item;
-        Json::Value loot;
-        
-        int read_json(const std::string& PATH)
-        {
-            std::ifstream json1(PATH + "/location.json");
-            if (json1.fail())
-            {
-                return 1;
-            }
-            try
-            {
-                json1 >> location;
-            }
-            catch(const Json::RuntimeError& e)
-            {
-                return 2;
-            }
-            return 0;
-        }
 
         int save_write(const std::string& savename)
         {
@@ -58,6 +40,9 @@ class DataManager
         void save_init(const std::string& savename)
         {
             game.id = savename;
-            game.player.level = 0;
+            game.characters.push_back((struct PlayerStruct){"Jules",1});
+            game.characters.push_back((struct PlayerStruct){"Oscar",2});
+            game.current_char = 1;
+            game.location = "village_entrance";
         }
 };

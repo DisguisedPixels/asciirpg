@@ -8,30 +8,36 @@ DataManager data;
 
 void tick_passed()
 {
-    // Wait
-    usleep(0.5*terminal.ms);
-
-    // Logic
-    if(terminal.is_running())
+    while(terminal.is_running())
     {
-        terminal.second += 1;
+        // Wait
+        usleep(0.5*terminal.ms);
+        
+        // Logic
+        terminal.tick += 1;
+
+        switch(terminal.menu)
+        {
+            case 0:
+            {
+                break;
+            }
+            case 1:
+            {
+                break;
+            }
+        }
+
         if(!terminal.pause)
         {
             terminal.draw_refresh(data.game);
         }
     }
-    else
-    {
-        std::terminate();
-    }
-
-    // Replay
-    tick_passed();
 }
 
 bool load_data()
 {
-    int result = data.read_json(terminal.PATH + "/bin/data/json");
+    int result = terminal.read_json(terminal.PATH + "/bin/data/json");
     if(result == 1)
     {
         terminal.draw_refresh(data.game);
@@ -65,7 +71,7 @@ int main()
     tick_thread.detach();
 
     Terminal* term = &terminal;
-    
+
     while(terminal.is_running())
     {
         /* FRAME INIT */
@@ -74,7 +80,7 @@ int main()
 
 
         /* LOGIC      */
-        
+
 
 
         /* RENDER     */
@@ -95,25 +101,90 @@ int main()
         {
         switch(terminal.menu)
         {
+            // MENU
             case 0:
             {
-                switch(input)
+            
+            switch(terminal.submenu)
+            {
+                case 0:
                 {
-                    case 't':
+                    switch(input)
                     {
-                        data.game.id = terminal.get_string();
-                        break;
-                    }
-                    case 'q':
-                    {
-                        if(in_array("a",{"a","test"}));
+                        case 'p':
                         {
-                            return 0;
+                            terminal.menu = 1;
+                            break;
                         }
-                        break;
                     }
+                    break;
                 }
-                break;
+            }
+            break;
+
+            }
+            // GAME
+            case 1:
+            {
+
+            switch(terminal.submenu)
+            {
+                // MAIN
+                case 0:
+                {
+                    switch(input)
+                    {
+                        case 27:
+                        {
+                            terminal.menu = 0;
+                            break;
+                        }
+                        case 'c':
+                        {
+                            terminal.submenu = 1;
+                            break;
+                        }
+                    }
+                    break;
+                }
+                // SWITCH CHARACTER
+                case 1:
+                {
+                    switch(input)
+                    {
+                        case 27:
+                        {
+                            terminal.submenu = 0;
+                            break;
+                        }
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        {
+                            int num;
+                            switch(input)
+                            {
+                                case '1': {num = 1; break;};
+                                case '2': {num = 2; break;};
+                                case '3': {num = 3; break;};
+                                case '4': {num = 4; break;};
+                                case '5': {num = 5; break;};
+                            }
+                            if(num <= data.game.characters.size())
+                            {
+                                data.game.current_char = num;
+                                terminal.submenu = 0;
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            break;
+
             }
         }
         break;

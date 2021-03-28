@@ -1,3 +1,7 @@
 {
-    
+    "village_entrance": {
+        "name": ["Hyvale","Village","Entrance"],
+        "location": ["hyvale","village","village_entrance"],
+        "connect": [["village_square",1]]
+    }
 }

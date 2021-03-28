@@ -1,7 +1,5 @@
 TODO:
 
-Refresh screen without clearing, so there is no flashing
-
 Future: Add working save system
 
 Add menu system
