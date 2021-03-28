@@ -41,6 +41,8 @@ class Terminal
         int menu;
         int submenu;
 
+        int slot;
+
         int character_max;
 
         WINDOW* win_bar;
@@ -106,6 +108,8 @@ class Terminal
             menu = 0;
             submenu = 0;
 
+            slot = 0;
+
             character_max = 5;
 
             nodelay(stdscr, FALSE);
@@ -127,6 +131,10 @@ class Terminal
 
         void start_draw()
         {
+            wresize(win_bar,4,win_width);
+            wresize(win_main,win_height,win_width);
+            wresize(win_side,win_height-3,30);
+
             werase(win_main);
             werase(win_side);
             werase(win_bar);
@@ -214,6 +222,25 @@ class Terminal
             return m_colors[color_name];
         }
 
+        bool create_character(SaveGameStruct &data, const std::string &name)
+        {
+            if(data.characters.size() < character_max)
+            {
+                data.characters.push_back((struct PlayerStruct){name,1});
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        void travel_to(SaveGameStruct &data, const std::string &name)
+        {
+            Json::Value current_location = location[name];
+            data.location = json2str(current_location["location"][2]);
+        }
+
         void draw_refresh(SaveGameStruct &data)
         {
             start_draw();
@@ -222,10 +249,6 @@ class Terminal
             {
                 case 0:
                 {
-                    wresize(win_bar,4,win_width);
-                    wresize(win_main,win_height,win_width);
-                    wresize(win_side,win_height-3,30);
-
                     startcolor(stdscr, "black", "white");
                     wborder(win_main,0,0,0,0,0,0,0,0);
                     wborder(win_side,0,0,0,0,0,0,0,0);
@@ -244,10 +267,6 @@ class Terminal
                 }
                 case 1:
                 {
-                    wresize(win_bar,4,win_width);
-                    wresize(win_main,win_height,win_width);
-                    wresize(win_side,win_height-3,30);
-
                     startcolor(stdscr, "black", "white");
                     wborder(win_main,0,0,0,0,0,0,0,0);
                     wborder(win_side,0,0,0,0,0,0,0,0);
@@ -255,7 +274,7 @@ class Terminal
 
                     PlayerStruct current_char = data.characters[data.current_char-1];
 
-                    mvwprintw(win_bar,1,1,"ASCII RPG | Profile: %s", data.id.c_str());
+                    mvwprintw(win_bar,1,1,"ASCII | Profile: %s", data.id.c_str());
                     mvwprintw(win_bar,2,1,"%s LVL%d | Party: (%d/%d)", current_char.name.c_str(), current_char.level,data.characters.size(),character_max);
                     std::string location_1 = json2str(location[data.location]["name"][0]);
                     std::string location_2 = json2str(location[data.location]["name"][1]);
@@ -268,7 +287,8 @@ class Terminal
                         {
                             mvwprintw(win_side,1,1,"Main");
                             mvwprintw(win_side,3,1,"ESC:Exit");
-                            mvwprintw(win_side,4,1,"c:Select Character");
+                            mvwprintw(win_side,4,1,"t:Travel");
+                            mvwprintw(win_side,5,1,"c:Select Character");
                             break;
                         }
                         case 1:
@@ -282,6 +302,25 @@ class Terminal
                                 mvwprintw(win_main,4+i,30,"%d | %s LVL%d",i+1,data.characters[i].name.c_str(),data.characters[i].level);
                             }
 
+                            break;
+                        }
+                        case 2:
+                        {
+                            mvwprintw(win_side,1,1,"Travel Menu");
+                            mvwprintw(win_side,3,1,"ESC:Exit");
+                            mvwprintw(win_side,4,1,"W:Scroll Up");
+                            mvwprintw(win_side,5,1,"S:Scroll Down");
+
+                            mvwprintw(win_main,4,30,"Location: %s", json2str(location[data.location]["name"]).c_str());
+
+                            Json::Value connections = location[data.location]["connect"];
+                            mvwprintw(win_main,6,30,"Connections: ");
+                            for(int i = 0; i < connections.size(); i++)
+                            {
+                                mvwprintw(win_main,7+i,31,json2str(connections[i][0]).c_str());
+                            }
+
+                            mvwprintw(win_main,7+slot,30,">");
                             break;
                         }
                     }

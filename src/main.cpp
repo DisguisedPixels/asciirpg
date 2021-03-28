@@ -144,6 +144,11 @@ int main()
                             terminal.submenu = 1;
                             break;
                         }
+                        case 't':
+                        {
+                            terminal.submenu = 2;
+                            break;
+                        }
                     }
                     break;
                 }
@@ -177,6 +182,49 @@ int main()
                                 data.game.current_char = num;
                                 terminal.submenu = 0;
                             }
+                            break;
+                        }
+                    }
+                    break;
+                }
+                // LOCATION
+                case 2:
+                {
+                    switch(input)
+                    {
+                        case 27:
+                        {
+                            terminal.menu = 0;
+                            terminal.slot = 0;
+                            break;
+                        }
+                        case 'c':
+                        {
+                            terminal.submenu = 1;
+                            break;
+                        }
+                        case 'w':
+                        {
+                            if(terminal.slot > 0)
+                            {
+                                terminal.slot -= 1;
+                            }
+                            break;
+                        }
+                        case 's':
+                        {
+                            if(terminal.slot < terminal.location[data.game.location]["connect"].size()-1)
+                            {
+                                terminal.slot += 1;
+                            }
+                            break;
+                        }
+                        case 't':
+                        {
+                            std::string name = json2str(terminal.location[data.game.location]["connect"][terminal.slot][0]);
+                            terminal.travel_to(data.game,name);
+                            terminal.slot = 0;
+                            terminal.submenu = 0;
                             break;
                         }
                     }

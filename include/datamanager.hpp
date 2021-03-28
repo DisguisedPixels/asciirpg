@@ -40,8 +40,8 @@ class DataManager
         void save_init(const std::string& savename)
         {
             game.id = savename;
-            game.characters.push_back((struct PlayerStruct){"Jules",1});
-            game.characters.push_back((struct PlayerStruct){"Oscar",2});
+            game.characters.push_back((struct PlayerStruct){"Guy 1",1});
+            game.characters.push_back((struct PlayerStruct){"Guy 2",2});
             game.current_char = 1;
             game.location = "village_entrance";
         }
