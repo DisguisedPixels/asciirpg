@@ -2,333 +2,379 @@
 
 #include <import.hpp>
 #include <datamanager.hpp>
-#include <utils.hpp>
 
-class Terminal
+class TerminalClass
 {
     private:
-        bool running;
-        std::map<std::string, int> m_colors;
-        std::string last_bg;
-        std::string last_fg;
-
-        void setup_colors()
-        {
-            std::string color_names[] = {
-                "black", "red", "green", "blue", "yellow", "magenta", "cyan", "white"
-            };
-
-            /* fg = foreground || bg = background */
-            int counter = 0;
-            for(int fg = 0; fg < 8; fg++)
-            {
-                for(int bg = 0; bg < 8; bg++)
-                {
-                    std::string color_name = color_names[bg] + "-" + color_names[fg];
-                    init_pair(counter,fg,bg);
-
-                    m_colors[color_name] = counter;
-                    counter++;
-                }
-            }
-        }
-
     public:
-        std::string PATH;
-        int win_height;
-        int win_width;
+    std::string PATH;
 
-        int menu;
-        int submenu;
+    int tick;
 
-        int slot;
+    bool running;
+    bool pause;
 
-        int character_max;
+    unsigned int menu;
+    unsigned int submenu;
+    int slot;
 
-        WINDOW* win_bar;
-        WINDOW* win_main;
-        WINDOW* win_side;
+    const unsigned int ms = 1000000;
 
-        int ms = 1000000;
-        int tick = 0;
+    TerminalClass()
+    {
+        setup();
+    }
+    ~TerminalClass()
+    {
+        teardown();
+    }
 
-        bool pause;
+    int scr_width;
+    int scr_height;
 
-        Json::Value location;
+    WINDOW *win_bar_frame;
+    WINDOW *win_bar;
+
+    WINDOW *win_main_frame;
+    WINDOW *win_main;
+
+    WINDOW *win_side_frame;
+    WINDOW *win_side;
+
+    Json::Value location;
+    Json::Value item;
+
+    int read_json(const std::string& PATH)
+    {
+        // LOCATION
+        std::ifstream json1(PATH + "/location.json");
+        if (json1.fail())
+        {
+            return 1;
+        }
+        try
+        {
+            json1 >> location;
+        }
+        catch(const Json::RuntimeError& e)
+        {
+            return 2;
+        }
+
+        // ITEM
+        std::ifstream json2(PATH + "/item.json");
+        if (json2.fail())
+        {
+            return 1;
+        }
+        try
+        {
+            json2 >> item;
+        }
+        catch(const Json::RuntimeError& e)
+        {
+            return 2;
+        }
+        return 0;
+    }
+
+    void setup()
+    {
+        initscr();
+        noecho();
+        curs_set(0);
+        keypad(stdscr,TRUE);
+        cbreak();
+        //mousemask(ALL_MOUSE_EVENTS, NULL);
+
+        getmaxyx(stdscr, scr_height, scr_width);
+        resize_scr();
+
+        running = true;
+        pause = false;
+
+        menu = 0;
+        submenu = 0;
+        slot = 0;
+
+        win_bar = newwin(2,scr_width-2,1,1);
+        win_side = newwin(scr_height-5,28,4,1);
+        win_main = newwin(scr_height-5,scr_width-31,4,30);
+
+        PATH = std::filesystem::current_path();
+        tick = 0;
+    }
+
+    void teardown()
+    {
+        endwin();
+        running = false;
+    }
+
+    void start_draw()
+    {
+        int tmp_x, tmp_y;
+        getmaxyx(stdscr, tmp_y, tmp_x);
+        if(scr_height != tmp_y or scr_width != tmp_x)
+        {
+            scr_height = tmp_y;
+            scr_width = tmp_x;
+            resize_scr();
+        }
+
+        werase(win_side);
+        werase(win_main);
+        werase(win_bar);
+    }
+
+    void end_draw()
+    {
+        refresh();
         
-        int read_json(const std::string& PATH)
+        wrefresh(win_side);
+        wrefresh(win_main);
+        wrefresh(win_bar);
+    }
+
+    int json2int(Json::Value &val)
+    {
+        std::stringstream ss;
+        ss << val;
+
+        std::string tmp = ss.str();
+
+        int num = atoi(tmp.c_str());
+
+        return(num);
+    }
+
+    std::string json2str(Json::Value &val)
+    {
+        std::stringstream ss;
+        ss << val;
+
+        std::string tmp = ss.str();
+        tmp.erase(0, 1);
+        tmp.erase(tmp.size() - 1);
+
+        return(tmp);
+    }
+
+    void resize_scr()
+    {
+        win_main_frame = newwin(scr_height-3,scr_width-29,3,29);
+        win_side_frame = newwin(scr_height-3,30,3,0);
+        win_bar_frame = newwin(4,scr_width,0,0);
+
+        wborder(win_main_frame,0,0,0,0,0,0,0,0);
+        wborder(win_side_frame,0,0,0,0,0,0,0,0);
+        wborder(win_bar_frame,0,0,0,0,0,0,0,0);
+
+        refresh();
+
+        wrefresh(win_main_frame);
+        wrefresh(win_side_frame);
+        wrefresh(win_bar_frame);
+
+        wresize(win_side,scr_height-5,28);
+        wresize(win_main,scr_height-5,scr_width-31);
+        wresize(win_bar,2,scr_width-2);
+    }
+
+    void print_scr(SaveGameStruct data, int char_max)
+    {
+        start_draw();
+
+        switch(menu)
         {
-            std::ifstream json1(PATH + "/location.json");
-            if (json1.fail())
+            case 0: // MENU
             {
-                return 1;
+                mvwprintw(win_bar,0,0,"ASCII RPG");
+                mvwprintw(win_bar,1,0,"MENU");
+
+                switch(submenu)
+                {
+                    case 0: // MAIN
+                    {
+                        mvwprintw(win_side,1,1,"ESC: Exit");
+                        mvwprintw(win_side,2,1,"P: Play");
+                        break;
+                    }
+                }
+                break;
             }
-            try
+            case 1: // GAME
             {
-                json1 >> location;
+                // MAIN
+                PlayerStruct current_char = data.characters[data.current_char-1];
+
+                mvwprintw(win_bar,0,0,"ASCII RPG | Profile: %s", data.id.c_str());
+                mvwprintw(win_bar,1,0,"%s LVL%d | Party: (%d/%d)", current_char.name.c_str(), current_char.level,data.characters.size(),char_max);
+
+                std::string location_1 = json2str(location[data.location]["name"][0]);
+                std::string location_2 = json2str(location[data.location]["name"][1]);
+                std::string location_3 = json2str(location[data.location]["name"][2]);
+                unsigned int size = location_1.size() + location_2.size() + location_3.size() + 8;
+                
+                mvwprintw(win_bar,0,scr_width-std::to_string(tick).length()-11,"Elapsed: %d",tick);
+                mvwprintw(win_bar,1,scr_width-size,"%s / %s / %s",location_1.c_str(),location_2.c_str(),location_3.c_str());
+
+                // DETAIL
+                switch(submenu)
+                {
+                    case 0: // MAIN
+                    {
+                        mvwprintw(win_side,0,0,"Main");
+
+                        mvwprintw(win_side,2,0,"ESC: Menu");
+                        mvwprintw(win_side,3,0,"ENTER: Terminal");
+                        mvwprintw(win_side,4,0,"C: Character Menu");
+                        mvwprintw(win_side,5,0,"T: Travel Menu");
+                        mvwprintw(win_side,6,0,"I: Inventory");
+                        break;
+                    }
+                    case 1: // CHARACTER SELECT
+                    {
+                        mvwprintw(win_side,0,0,"Character Select");
+
+                        mvwprintw(win_side,2,0,"ESC: Back");
+                        mvwprintw(win_side,3,0,"/\\: Up");
+                        mvwprintw(win_side,4,0,"\\/: Down");
+                        mvwprintw(win_side,5,0,"S: Select");
+                        mvwprintw(win_side,6,0,"R: Rename");
+                        mvwprintw(win_side,7,0,"D: Delete");
+
+                        mvwprintw(win_main,0,1,"Character List:");
+                        for (int i = 0; i < data.characters.size(); i++)
+                        {
+                            if(i == data.characters.size()-1)
+                            {
+                                mvwprintw(win_main,1+i,1,"\\ %s LVL%d",data.characters[i].name.c_str(),data.characters[i].level);
+                            }
+                            else
+                            {
+                                mvwprintw(win_main,1+i,1,"| %s LVL%d",data.characters[i].name.c_str(),data.characters[i].level);
+                            }
+                        }
+                        mvwprintw(win_main,0+slot,0,">");
+                        break;
+                    }
+                    case 2: // LOCATION SELECT
+                    {
+                        mvwprintw(win_side,0,0,"Travel Select");
+
+                        mvwprintw(win_side,2,0,"ESC: Back");
+                        mvwprintw(win_side,3,0,"/\\: Up");
+                        mvwprintw(win_side,4,0,"\\/: Down");
+                        mvwprintw(win_side,5,0,"T: Travel");
+
+                        mvwprintw(win_main,0,1,"Location List:");
+                        Json::Value connections = location[data.location]["connect"];
+                        for (int i = 0; i < connections.size(); i++)
+                        {
+                            if(i == connections.size()-1)
+                            {
+                                mvwprintw(win_main,1+i,1,"\\ %s %s (%s)",json2str(location[json2str(connections[i][0])]["name"][1]).c_str(),json2str(location[json2str(connections[i][0])]["name"][2]).c_str(),json2str(connections[i][0]).c_str());
+                            }
+                            else
+                            {
+                                mvwprintw(win_main,1+i,1,"| %s %s (%s)",json2str(location[json2str(connections[i][0])]["name"][1]).c_str(),json2str(location[json2str(connections[i][0])]["name"][2]).c_str(),json2str(connections[i][0]).c_str());
+                            }
+                        }
+                        mvwprintw(win_main,0+slot,0,">");
+                        break;
+                    }
+                    case 3: // INVENTORY
+                    {
+                        mvwprintw(win_side,0,0,"Inventory");
+
+                        mvwprintw(win_side,2,0,"ESC: Back");
+                        mvwprintw(win_side,3,0,"/\\: Up");
+                        mvwprintw(win_side,4,0,"\\/: Down");
+                        mvwprintw(win_side,5,0,"W: Item Up");
+                        mvwprintw(win_side,6,0,"S: Item Down");
+                        mvwprintw(win_side,7,0,"M: Merge Stack");
+                        mvwprintw(win_side,8,0,"L: Split Stack");
+                        mvwprintw(win_side,9,0,"X: Remove Stack");
+
+                        std::vector <ItemStruct> items = data.characters[data.current_char-1].inventory;
+                        mvwprintw(win_main,0,1,"Item List:");
+                        mvwprintw(win_main,0,20-(count_digit(items.size())+count_digit(data.characters[data.current_char-1].inventory_max)),"(%d/%d)",items.size(),data.characters[data.current_char-1].inventory_max);
+                        for (int i = 0; i < items.size(); i++)
+                        {
+                            if(i == items.size()-1)
+                            {
+                                mvwprintw(win_main,1+i,1,"\\ %s",json2str(item[items[i].id]["name"]).c_str());
+                            }
+                            else
+                            {
+                                mvwprintw(win_main,1+i,1,"| %s",json2str(item[items[i].id]["name"]).c_str());
+                            }
+                            mvwprintw(win_main,1+i,22-count_digit(items[i].amount),"x%d",items[i].amount);
+                        }
+                        mvwprintw(win_main,0+slot,0,">");
+                        break;
+                    }
+                }
+                break;
             }
-            catch(const Json::RuntimeError& e)
-            {
-                return 2;
-            }
-            return 0;
         }
+        
+        end_draw();
+    }
 
-        Terminal()
+    bool check_int(std::string &str)
+    {
+        for(int i = 0; i < str.length()-1; i++)
         {
-            setup();
-        }
-
-        ~Terminal()
-        {
-            teardown();
-        }
-
-        void setup()
-        {
-            initscr();
-            noecho();
-            //raw();
-            curs_set(0);
-            keypad(stdscr, TRUE);
-            mousemask(ALL_MOUSE_EVENTS, NULL);
-
-            if(has_colors())
-            {
-                start_color();
-                setup_colors();
-            }
-
-            running = true;
-            last_bg = "";
-            last_fg = "";
-
-            PATH = std::filesystem::current_path();
-
-            menu = 0;
-            submenu = 0;
-
-            slot = 0;
-
-            character_max = 5;
-
-            nodelay(stdscr, FALSE);
-            // use this to break the game!!
-
-            pause = false;
-
-            getmaxyx(stdscr, win_height, win_width);
-
-            win_main = newwin(win_height,win_width,0,0);
-            win_side = newwin(win_height-3,30,3,0);
-            win_bar = newwin(4,win_width,0,0);
-        }
-
-        void teardown()
-        {
-            endwin();
-        }
-
-        void start_draw()
-        {
-            wresize(win_bar,4,win_width);
-            wresize(win_main,win_height,win_width);
-            wresize(win_side,win_height-3,30);
-
-            werase(win_main);
-            werase(win_side);
-            werase(win_bar);
-            //erase();
-        }
-
-        void end_draw()
-        {
-            refresh();
-            wrefresh(win_main);
-            wrefresh(win_side);
-            wrefresh(win_bar);
-        }
-
-        void startcolor(WINDOW * win, const std::string& background, const std::string& foreground)
-        {
-            if(last_bg != "")
-            {
-                endcolor(win);
-            }
-
-            last_bg = background;
-            last_fg = foreground;
-
-            wattron(win, COLOR_PAIR(get_color(background,foreground)));
-        }
-
-        void endcolor(WINDOW * win)
-        {
-            wattroff(win, COLOR_PAIR(get_color(last_bg,last_fg)));
-            last_bg = "";
-            last_fg = "";
-        }
-
-        bool is_running()
-        {
-            return running;
-        }
-
-        void quit()
-        {
-            running = false;
-            teardown();
-        }
-
-        void frame_init()
-        {
-            getmaxyx(stdscr, win_height, win_width);
-        }
-
-        int get_key()
-        {
-            return wgetch(stdscr);
-        }
-
-        std::string get_string()
-        {
-            std::string input;
-
-            nocbreak();
-            echo();
-            curs_set(1);
-            pause = true;
-
-            move(win_height-2,1);
-            int ch = getch();
-
-            while ( ch != '\n' )
-            {
-                input.push_back( ch );
-                ch = getch();
-            }
-
-            cbreak();
-            noecho();
-            curs_set(0);
-            pause = false;
-
-            return input;
-        }
-
-        int get_color(const std::string& background, const std::string& foreground)
-        {
-            std::string color_name = background + "-" + foreground;
-            return m_colors[color_name];
-        }
-
-        bool create_character(SaveGameStruct &data, const std::string &name)
-        {
-            if(data.characters.size() < character_max)
-            {
-                data.characters.push_back((struct PlayerStruct){name,1});
-                return true;
-            }
-            else
+            if(!isdigit(str[i]))
             {
                 return false;
             }
         }
+        return true;
+    }
 
-        void travel_to(SaveGameStruct &data, const std::string &name)
+    int count_digit(int number)
+    {
+        return int(log10(number) + 1);
+    }
+
+
+    int get_key()
+    {
+        return wgetch(stdscr);
+    }
+
+    std::string get_string()
+    {
+        std::string input;
+
+        nocbreak();
+        echo();
+        curs_set(1);
+        pause = true;
+
+        move(scr_height-2,30);
+        int ch = getch();
+
+        while ( ch != '\n' )
         {
-            Json::Value current_location = location[name];
-            data.location = json2str(current_location["location"][2]);
+            input.push_back( ch );
+            ch = getch();
         }
 
-        void draw_refresh(SaveGameStruct &data)
-        {
-            start_draw();
+        cbreak();
+        noecho();
+        curs_set(0);
+        pause = false;
 
-            switch(menu)
-            {
-                case 0:
-                {
-                    startcolor(stdscr, "black", "white");
-                    wborder(win_main,0,0,0,0,0,0,0,0);
-                    wborder(win_side,0,0,0,0,0,0,0,0);
-                    wborder(win_bar,0,0,0,0,0,0,0,0);
+        return input;
+    }
 
-                    mvwprintw(win_bar,1,1,"ASCII RPG");
-                    switch(submenu)
-                    {
-                        case 0:
-                        {
-                            break;
-                        }
-                    }
-                    endcolor(stdscr);
-                    break;
-                }
-                case 1:
-                {
-                    startcolor(stdscr, "black", "white");
-                    wborder(win_main,0,0,0,0,0,0,0,0);
-                    wborder(win_side,0,0,0,0,0,0,0,0);
-                    wborder(win_bar,0,0,0,0,0,0,0,0);
-
-                    PlayerStruct current_char = data.characters[data.current_char-1];
-
-                    mvwprintw(win_bar,1,1,"ASCII | Profile: %s", data.id.c_str());
-                    mvwprintw(win_bar,2,1,"%s LVL%d | Party: (%d/%d)", current_char.name.c_str(), current_char.level,data.characters.size(),character_max);
-                    std::string location_1 = json2str(location[data.location]["name"][0]);
-                    std::string location_2 = json2str(location[data.location]["name"][1]);
-                    std::string location_3 = json2str(location[data.location]["name"][2]);
-                    unsigned int size = location_1.size() + location_2.size() + location_3.size() + 8;
-                    mvwprintw(win_bar,1,win_width-size,"%s / %s / %s",location_1.c_str(),location_2.c_str(),location_3.c_str());
-                    switch(submenu)
-                    {
-                        case 0:
-                        {
-                            mvwprintw(win_side,1,1,"Main");
-                            mvwprintw(win_side,3,1,"ESC:Exit");
-                            mvwprintw(win_side,4,1,"t:Travel");
-                            mvwprintw(win_side,5,1,"c:Select Character");
-                            break;
-                        }
-                        case 1:
-                        {
-                            mvwprintw(win_side,1,1,"Select Character");
-                            mvwprintw(win_side,3,1,"ESC:Back");
-                            mvwprintw(win_side,4,1,"1-%d: Select Character",data.characters.size());
-
-                            for (int i = 0; i < data.characters.size(); i++)
-                            {
-                                mvwprintw(win_main,4+i,30,"%d | %s LVL%d",i+1,data.characters[i].name.c_str(),data.characters[i].level);
-                            }
-
-                            break;
-                        }
-                        case 2:
-                        {
-                            mvwprintw(win_side,1,1,"Travel Menu");
-                            mvwprintw(win_side,3,1,"ESC:Exit");
-                            mvwprintw(win_side,4,1,"W:Scroll Up");
-                            mvwprintw(win_side,5,1,"S:Scroll Down");
-
-                            mvwprintw(win_main,4,30,"Location: %s", json2str(location[data.location]["name"]).c_str());
-
-                            Json::Value connections = location[data.location]["connect"];
-                            mvwprintw(win_main,6,30,"Connections: ");
-                            for(int i = 0; i < connections.size(); i++)
-                            {
-                                mvwprintw(win_main,7+i,31,json2str(connections[i][0]).c_str());
-                            }
-
-                            mvwprintw(win_main,7+slot,30,">");
-                            break;
-                        }
-                    }
-                    endcolor(stdscr);
-                    break;
-                }
-            }
-
-            end_draw();
-        }
+    void travel_to(SaveGameStruct &data, const std::string &name)
+    {
+        Json::Value current_location = location[name];
+        data.location = json2str(current_location["location"][2]);
+    }
 };
