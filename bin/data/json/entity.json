@@ -1,0 +1,13 @@
+{
+    "zombie": {
+        "name": "Zombie",
+        "aggro": 40,
+        "health": 3,
+        "strength": 3
+    },
+    "zombie_brute": {
+        "name": "Zombie Brute",
+        "aggro": 15,
+        "health": 5
+    }
+}

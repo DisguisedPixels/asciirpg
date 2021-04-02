@@ -1,6 +1,7 @@
 #pragma once
 
 #include <import.hpp>
+#include <utils.hpp>
 
 struct ItemStruct
 {
@@ -27,7 +28,7 @@ struct PlayerStatsStruct
     int piercing;
     int defence;
     int true_defence;
-    int fierce; // AKA creatures will attack more
+    int aggro; // AKA creatures will attack more (or fierce)
 };
 
 struct PlayerStruct
@@ -35,16 +36,27 @@ struct PlayerStruct
     std::string name;
     unsigned int level;
     std::vector <ItemStruct> inventory {};
+    ItemStruct hotbar[6];
     unsigned int inventory_max;
     PlayerStatsStruct stats;
+};
+
+struct EnemyStruct
+{
+    std::string id;
+    int health;
+    int strength;
 };
 
 struct SaveGameStruct
 {
     std::string id;
     std::vector <PlayerStruct> characters {};
+    std::vector <EnemyStruct> enemies {};
+    std::map <std::string, LocationStruct> locations {};
     unsigned int current_char;
     std::string location;
+    int temp_data[10];
 };
 
 class DataManager
@@ -52,7 +64,19 @@ class DataManager
     public:
         int character_max = 5;
 
+        JsonData json;
+
         SaveGameStruct game;
+
+        DataManager()
+        {
+            std::string PATH = std::filesystem::current_path();
+            if(!json.read_json(PATH + "/bin/data/json") == 0)
+            {
+                endwin();
+            }
+            save_init("Test");
+        }
 
         int save_write(const std::string& savename)
         {
@@ -75,6 +99,41 @@ class DataManager
             {
                 return false;
             }
+        }
+
+        bool summon_creature(std::string &location, const std::string &id)
+        {
+            game.locations[location].creatures.push_back({id});
+        }
+
+        bool combat_enemy(const std::string &id)
+        {
+            int health = json2int(json.entity[id]["health"]);
+            int strength = json2int(json.entity[id]["strength"]);
+            game.enemies.push_back({id,health,strength});
+        }
+
+        int enemy_check()
+        {
+            int aggro = 0;
+            for(int i = 0; i < game.characters.size(); i++)
+            {
+                if(aggro < game.characters[i].stats.aggro)
+                {
+                    aggro = game.characters[i].stats.aggro;
+                }
+            }
+
+            int found = false;
+            for(int i = 0; i < game.locations[game.location].creatures.size(); i++)
+            {
+                if(aggro >= json2int(json.entity[game.locations[game.location].creatures[i]]["aggro"]))
+                {
+                    found = true;
+                    combat_enemy(game.locations[game.location].creatures[i]);
+                }
+            }
+            return found;
         }
 
         bool item_check(std::string id, unsigned int amount)
@@ -242,10 +301,43 @@ class DataManager
             return(true);
         }
 
+        int player_get_aggro(std::vector <PlayerStruct> characters)
+        {
+            int sum_of_weight = 0;
+            for(int i=0; i<characters.size(); i++)
+            {
+                sum_of_weight += characters[i].stats.aggro;
+            }
+            int rnd = random() % sum_of_weight;
+            for(int i=0; i<characters.size(); i++)
+            {
+                if(rnd < characters[i].stats.aggro)
+                {
+                    return i;
+                }
+                rnd -= characters[i].stats.aggro;
+            }
+            return -1;
+        }
+
         void save_init(const std::string& savename)
         {
             game.id = savename;
-            game.characters.push_back((struct PlayerStruct){"Guy1",1,{{"wood",15},{"test",1},{"wood",4}},5,{20,20,20,20,1,0,30,30,0,1,0,30}});
+            game.characters.push_back((struct PlayerStruct){"Guy1",1,{{"wood",15},{"test",1},{"wood",4}},{{"none",1},{"none",1},{"none",1},{"none",1},{"none",1},{"sword",1}},5,{20,20,20,20,1,0,30,30,0,1,0,50}});
+            game.characters.push_back((struct PlayerStruct){"Guy2",1,{{"wood",15},{"test",1},{"wood",4}},{{"none",1},{"none",1},{"none",1},{"none",1},{"none",1},{"sword",1}},5,{20,20,20,20,1,0,30,30,0,1,0,30}});
+            game.characters.push_back((struct PlayerStruct){"Guy3",1,{{"wood",15},{"test",1},{"wood",4}},{{"none",1},{"none",1},{"none",1},{"none",1},{"none",1},{"sword",1}},5,{20,20,20,20,1,0,30,30,0,1,0,10}});
+
+            for(int i = 0; i < json.location["other"].size(); i++)
+            {
+                std::string name = json2str(json.location["other"][i]["id"]);
+                game.locations[name];
+                game.locations[name].creatures;
+                for(int j = 0; j < json.location["other"][i]["creatures"].size(); j++)
+                {
+                    summon_creature(name,json2str(json.location["other"][i]["creatures"][j]));
+                }
+            }
+
             game.current_char = 1;
             game.location = "village_entrance";
         }

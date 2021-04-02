@@ -2,10 +2,11 @@
 
 #include <import.hpp>
 #include <datamanager.hpp>
+#include <utils.hpp>
+
 
 class TerminalClass
 {
-    private:
     public:
     std::string PATH;
 
@@ -16,13 +17,17 @@ class TerminalClass
 
     unsigned int menu;
     unsigned int submenu;
+    unsigned int state;
+    unsigned int substate;
     int slot;
+
+    std::vector <std::string> combat_log {};
 
     const unsigned int ms = 1000000;
 
     TerminalClass()
     {
-        setup();
+        
     }
     ~TerminalClass()
     {
@@ -41,42 +46,7 @@ class TerminalClass
     WINDOW *win_side_frame;
     WINDOW *win_side;
 
-    Json::Value location;
-    Json::Value item;
-
-    int read_json(const std::string& PATH)
-    {
-        // LOCATION
-        std::ifstream json1(PATH + "/location.json");
-        if (json1.fail())
-        {
-            return 1;
-        }
-        try
-        {
-            json1 >> location;
-        }
-        catch(const Json::RuntimeError& e)
-        {
-            return 2;
-        }
-
-        // ITEM
-        std::ifstream json2(PATH + "/item.json");
-        if (json2.fail())
-        {
-            return 1;
-        }
-        try
-        {
-            json2 >> item;
-        }
-        catch(const Json::RuntimeError& e)
-        {
-            return 2;
-        }
-        return 0;
-    }
+    JsonData json;
 
     void setup()
     {
@@ -87,14 +57,17 @@ class TerminalClass
         cbreak();
         //mousemask(ALL_MOUSE_EVENTS, NULL);
 
+
         getmaxyx(stdscr, scr_height, scr_width);
         resize_scr();
 
         running = true;
         pause = false;
 
-        menu = 0;
+        menu = 1;
         submenu = 0;
+        state = 0;
+        substate = 0;
         slot = 0;
 
         win_bar = newwin(2,scr_width-2,1,1);
@@ -102,6 +75,7 @@ class TerminalClass
         win_main = newwin(scr_height-5,scr_width-31,4,30);
 
         PATH = std::filesystem::current_path();
+        json.read_json(PATH + "/bin/data/json");
         tick = 0;
     }
 
@@ -134,30 +108,6 @@ class TerminalClass
         wrefresh(win_side);
         wrefresh(win_main);
         wrefresh(win_bar);
-    }
-
-    int json2int(Json::Value &val)
-    {
-        std::stringstream ss;
-        ss << val;
-
-        std::string tmp = ss.str();
-
-        int num = atoi(tmp.c_str());
-
-        return(num);
-    }
-
-    std::string json2str(Json::Value &val)
-    {
-        std::stringstream ss;
-        ss << val;
-
-        std::string tmp = ss.str();
-        tmp.erase(0, 1);
-        tmp.erase(tmp.size() - 1);
-
-        return(tmp);
     }
 
     void resize_scr()
@@ -208,12 +158,12 @@ class TerminalClass
                 // MAIN
                 PlayerStruct current_char = data.characters[data.current_char-1];
 
-                mvwprintw(win_bar,0,0,"ASCII RPG | Profile: %s", data.id.c_str());
-                mvwprintw(win_bar,1,0,"%s LVL%d | Party: (%d/%d)", current_char.name.c_str(), current_char.level,data.characters.size(),char_max);
+                mvwprintw(win_bar,0,0,"ASCII RPG | Profile: %s | Party: (%d/%d)", data.id.c_str(),data.characters.size(),char_max);
+                mvwprintw(win_bar,1,0,"%s LVL%d | Hotbar: %s %s %s %s %s %s", current_char.name.c_str(),current_char.level,current_char.hotbar[0].id.c_str(),current_char.hotbar[1].id.c_str(),current_char.hotbar[2].id.c_str(),current_char.hotbar[3].id.c_str(),current_char.hotbar[4].id.c_str(),current_char.hotbar[5].id.c_str());
 
-                std::string location_1 = json2str(location[data.location]["name"][0]);
-                std::string location_2 = json2str(location[data.location]["name"][1]);
-                std::string location_3 = json2str(location[data.location]["name"][2]);
+                std::string location_1 = json2str(json.location["data"][data.location]["name"][0]);
+                std::string location_2 = json2str(json.location["data"][data.location]["name"][1]);
+                std::string location_3 = json2str(json.location["data"][data.location]["name"][2]);
                 unsigned int size = location_1.size() + location_2.size() + location_3.size() + 8;
                 
                 mvwprintw(win_bar,0,scr_width-std::to_string(tick).length()-11,"Elapsed: %d",tick);
@@ -240,9 +190,11 @@ class TerminalClass
                         mvwprintw(win_side,2,0,"ESC: Back");
                         mvwprintw(win_side,3,0,"/\\: Up");
                         mvwprintw(win_side,4,0,"\\/: Down");
-                        mvwprintw(win_side,5,0,"S: Select");
-                        mvwprintw(win_side,6,0,"R: Rename");
-                        mvwprintw(win_side,7,0,"D: Delete");
+                        mvwprintw(win_side,5,0,"W: Item Up");
+                        mvwprintw(win_side,6,0,"S: Item Down");
+                        mvwprintw(win_side,7,0,"S: Select");
+                        mvwprintw(win_side,8,0,"R: Rename");
+                        mvwprintw(win_side,9,0,"D: Delete");
 
                         mvwprintw(win_main,0,1,"Character List:");
                         for (int i = 0; i < data.characters.size(); i++)
@@ -269,16 +221,16 @@ class TerminalClass
                         mvwprintw(win_side,5,0,"T: Travel");
 
                         mvwprintw(win_main,0,1,"Location List:");
-                        Json::Value connections = location[data.location]["connect"];
+                        Json::Value connections = json.location["data"][data.location]["connect"];
                         for (int i = 0; i < connections.size(); i++)
                         {
                             if(i == connections.size()-1)
                             {
-                                mvwprintw(win_main,1+i,1,"\\ %s %s (%s)",json2str(location[json2str(connections[i][0])]["name"][1]).c_str(),json2str(location[json2str(connections[i][0])]["name"][2]).c_str(),json2str(connections[i][0]).c_str());
+                                mvwprintw(win_main,1+i,1,"\\ %s %s (%s)",json2str(json.location["data"][json2str(connections[i][0])]["name"][1]).c_str(),json2str(json.location["data"][json2str(connections[i][0])]["name"][2]).c_str(),json2str(connections[i][0]).c_str());
                             }
                             else
                             {
-                                mvwprintw(win_main,1+i,1,"| %s %s (%s)",json2str(location[json2str(connections[i][0])]["name"][1]).c_str(),json2str(location[json2str(connections[i][0])]["name"][2]).c_str(),json2str(connections[i][0]).c_str());
+                                mvwprintw(win_main,1+i,1,"| %s %s (%s)",json2str(json.location["data"][json2str(connections[i][0])]["name"][1]).c_str(),json2str(json.location["data"][json2str(connections[i][0])]["name"][2]).c_str(),json2str(connections[i][0]).c_str());
                             }
                         }
                         mvwprintw(win_main,0+slot,0,">");
@@ -296,6 +248,7 @@ class TerminalClass
                         mvwprintw(win_side,7,0,"M: Merge Stack");
                         mvwprintw(win_side,8,0,"L: Split Stack");
                         mvwprintw(win_side,9,0,"X: Remove Stack");
+                        mvwprintw(win_side,10,0,"K: Transfer Stack");
 
                         std::vector <ItemStruct> items = data.characters[data.current_char-1].inventory;
                         mvwprintw(win_main,0,1,"Item List:");
@@ -304,15 +257,52 @@ class TerminalClass
                         {
                             if(i == items.size()-1)
                             {
-                                mvwprintw(win_main,1+i,1,"\\ %s",json2str(item[items[i].id]["name"]).c_str());
+                                mvwprintw(win_main,1+i,1,"\\ %s",json2str(json.item[items[i].id]["name"]).c_str());
                             }
                             else
                             {
-                                mvwprintw(win_main,1+i,1,"| %s",json2str(item[items[i].id]["name"]).c_str());
+                                mvwprintw(win_main,1+i,1,"| %s",json2str(json.item[items[i].id]["name"]).c_str());
                             }
                             mvwprintw(win_main,1+i,22-count_digit(items[i].amount),"x%d",items[i].amount);
                         }
                         mvwprintw(win_main,0+slot,0,">");
+                        break;
+                    }
+                    case 4: // COMBAT
+                    {
+                        wmove(win_main,0,0);
+                        for(int i = 0; i < combat_log.size(); i++)
+                        {
+                            wprintw(win_main,"%s %c",combat_log[i].c_str(), '\n');
+                        }
+
+                        switch(state)
+                        {
+                            case 0: // INIT
+                            {
+                                mvwprintw(win_side,0,0,"Combat/INIT");
+
+                                mvwprintw(win_side,2,0,"ENTER: Continue");
+                                break;
+                            }
+                            case 1: // PARTY
+                            {
+                                mvwprintw(win_side,0,0,"Combat/Party (%d/%d)",substate+1,data.characters.size());
+                                mvwprintw(win_side,1,1,"| %s [%d/%d]",data.characters[substate].name.c_str(),data.characters[substate].stats.health,data.characters[substate].stats.health_max);
+                                break;
+                            }
+                            case 2: // ENEMY
+                            {
+                                mvwprintw(win_side,0,0,"Combat/Enemy (%d/%d)", substate+1, data.enemies.size());
+                                mvwprintw(win_side,1,1,"| %s [%d/%d]",json2str(json.entity[data.enemies[substate].id]["name"]).c_str(),data.enemies[substate].health,json2int(json.entity[data.enemies[substate].id]["health"]));
+                                break;
+                            }
+                            case 3: // DEINIT
+                            {
+                                mvwprintw(win_side,0,0,"Combat/Complete");
+                                break;
+                            }
+                        }
                         break;
                     }
                 }
@@ -372,9 +362,20 @@ class TerminalClass
         return input;
     }
 
-    void travel_to(SaveGameStruct &data, const std::string &name)
+    void travel_to(DataManager &data, std::string &name)
     {
-        Json::Value current_location = location[name];
-        data.location = json2str(current_location["location"][2]);
+        Json::Value current_location = json.location["data"][name];
+        data.game.location = json2str(current_location["location"][2]);
+        //data.enemy_check(data.game.locations[data.game.location]);
+        if(data.enemy_check())
+        {
+            slot = 0;
+            submenu = 4;
+        }
+        else
+        {
+            slot = 0;
+            submenu = 0;
+        }
     }
 };

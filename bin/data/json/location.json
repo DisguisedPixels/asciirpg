@@ -1,12 +1,24 @@
 {
-    "village_entrance": {
-        "name": ["Hyvale","Village","Entrance"],
-        "location": ["hyvale","village","village_entrance"],
-        "connect": [["village_square",1],["village_bar",1]]
+    "data": {
+        "village_entrance": {
+            "name": ["TEST","Village","Entrance"],
+            "location": ["test","village","village_entrance"],
+            "connect": [["village_square",1],["village_bar",1]]
+        },
+        "village_square": {
+            "name": ["TEST","Village","Square"],
+            "location": ["test","village","village_square"],
+            "connect": [["village_entrance",1],["village_bar",1]]
+        },
+        "village_bar": {
+            "name": ["TEST","Village","Bar"],
+            "location": ["test","village","village_bar"],
+            "connect": [["village_entrance",1],["village_square",1]]
+        }
     },
-    "village_square": {
-        "name": ["Hyvale","Village","Square"],
-        "location": ["hyvale","village","village_square"],
-        "connect": [["village_entrance",1],["village_bar",1]]
-    }
+    "other": [
+        {"id": "village_entrance", "creatures": ["zombie"]},
+        {"id": "village_square", "creatures": ["zombie","zombie_brute"]},
+        {"id": "village_bar", "creatures": []}
+    ]
 }

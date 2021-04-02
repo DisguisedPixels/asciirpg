@@ -1,1 +1,14 @@
-Add all inv functions
+Check if party aggro is above creature requirement (in location) to fight
+
+Player uses attacks with hotbar
+
+Enemy attacks (player aggro is chance)
+
+
+locations dict init
+
+attacking creatures
+
+call father
+
+INSTEAD OF MAKING THE LOCATION DATA A VECTOR, MAKE IT A DICTIONARY

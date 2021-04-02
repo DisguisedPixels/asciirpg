@@ -1,9 +1,11 @@
 #include <import.hpp>
 #include <terminal.hpp>
 #include <datamanager.hpp>
+#include <utils.hpp>
 
 TerminalClass terminal;
 DataManager data;
+JsonData json;
 
 void game_tick()
 {
@@ -21,10 +23,6 @@ void game_tick()
             {
                 break;
             }
-            case 1: // GAME
-            {
-                break;
-            }
         }
 
         // Refresh
@@ -37,12 +35,17 @@ void game_tick()
 
 int main()
 {
-    if(terminal.read_json(terminal.PATH + "/bin/data/json"))
+    srand ( time(NULL) );
+    
+    std::string PATH = std::filesystem::current_path();
+    if(json.read_json(PATH + "/bin/data/json"))
     {
 
     }
 
-    data.save_init("Test");
+    terminal.setup();
+
+    
 
     std::thread tick_thread (game_tick);
     tick_thread.detach();
@@ -161,13 +164,13 @@ int main()
                                 {
                                     if(result.size() >= 2)
                                     {
-                                        Json::Value connections = terminal.location[data.game.location]["connect"];
+                                        Json::Value connections = json.location["data"][data.game.location]["connect"];
                                         for(int i = 0; i < connections.size(); i++)
                                         {
                                             if(connections[i][0] == result[1])
                                             {
-                                                std::string name = terminal.json2str(terminal.location[data.game.location]["connect"][i][0]);
-                                                terminal.travel_to(data.game,name);
+                                                std::string name = json2str(json.location["data"][data.game.location]["connect"][i][0]);
+                                                terminal.travel_to(data,name);
                                                 break;
                                             }
                                         }
@@ -210,6 +213,22 @@ int main()
                                 break;
                             }
                             case 's':
+                            {
+                                if(terminal.slot != 0 and terminal.slot != data.game.characters.size())
+                                {
+                                    std::swap(data.game.characters[terminal.slot],data.game.characters[terminal.slot-1]);
+                                }
+                                break;
+                            }
+                            case 'w':
+                            {
+                                if(terminal.slot >= 2)
+                                {
+                                    std::swap(data.game.characters[terminal.slot-1],data.game.characters[terminal.slot-2]);
+                                }
+                                break;
+                            }
+                            case 'c':
                             {
                                 if(terminal.slot != 0)
                                 {
@@ -263,7 +282,7 @@ int main()
                             }
                             case KEY_DOWN:
                             {
-                                if(terminal.slot < terminal.location[data.game.location]["connect"].size())
+                                if(terminal.slot < json.location["data"][data.game.location]["connect"].size())
                                 {
                                     terminal.slot += 1;
                                 }
@@ -273,10 +292,8 @@ int main()
                             {
                                 if(terminal.slot != 0)
                                 {
-                                    std::string name = terminal.json2str(terminal.location[data.game.location]["connect"][terminal.slot-1][0]);
-                                    terminal.travel_to(data.game,name);
-                                    terminal.slot = 0;
-                                    terminal.submenu = 0;
+                                    std::string name = json2str(json.location["data"][data.game.location]["connect"][terminal.slot-1][0]);
+                                    terminal.travel_to(data,name);
                                 }
                                 break;
                             }
@@ -331,7 +348,7 @@ int main()
                                 {
                                     ItemStruct item = data.game.characters[data.game.current_char-1].inventory[terminal.slot-1];
                                     data.item_remove_slot(terminal.slot-1);
-                                    data.item_add(item.id,item.amount,terminal.json2int(terminal.item[item.id]["stack"]));
+                                    data.item_add(item.id,item.amount,json2int(json.item[item.id]["stack"]));
                                     if(terminal.slot > data.game.characters[data.game.current_char-1].inventory.size())
                                     {
                                         terminal.slot-=1;
@@ -361,7 +378,7 @@ int main()
                             {
                                 if(terminal.slot > 0)
                                 {
-                                    data.item_remove_slot(terminal.slot);
+                                    data.item_remove_slot(terminal.slot-1);
                                     terminal.slot -= 1;
                                 }
                                 break;
@@ -376,7 +393,7 @@ int main()
                                         if(data.game.characters[i].name == character)
                                         {
                                             ItemStruct item = data.game.characters[data.game.current_char-1].inventory[terminal.slot-1];
-                                            if(data.item_add_char(item.id,item.amount,terminal.json2int(terminal.item[item.id]["stack"]),i))
+                                            if(data.item_add_char(item.id,item.amount,json2int(json.item[item.id]["stack"]),i))
                                             {
                                                 data.item_remove_slot(terminal.slot-1);
                                                 terminal.slot -= 1;
@@ -385,6 +402,95 @@ int main()
                                         }
                                     }
                                 }
+                            }
+                        }
+                        break;
+                    }
+                    case 4: // COMBAT
+                    {
+                        switch(terminal.state)
+                        {
+                            case 0:
+                            {
+                                switch(input)
+                                {
+                                    case '\n':
+                                    {
+                                        terminal.combat_log.clear();
+                                        terminal.state = 1;
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 1:
+                            {
+                                switch(input)
+                                {
+                                    case '\n':
+                                    {
+                                        if(data.game.enemies.size() < 1)
+                                        {
+                                            terminal.substate = 0;
+                                            terminal.state = 3;
+                                            break;
+                                        }
+                                        terminal.substate += 1;
+                                        if(terminal.substate > data.game.characters.size()-1)
+                                        {
+                                            terminal.substate = 0;
+                                            terminal.state = 2;
+                                            terminal.combat_log.push_back("Party: Attack");
+                                            break;
+                                        }
+
+                                        // Logic
+                                        terminal.combat_log.push_back("Party: Attack");
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 2:
+                            {
+                                switch(input)
+                                {
+                                    case '\n':
+                                    {
+                                        if(data.game.enemies.size() < 1)
+                                        {
+                                            terminal.substate = 0;
+                                            terminal.state = 3;
+                                            break;
+                                        }
+                                        terminal.substate += 1;
+                                        if(terminal.substate > data.game.enemies.size()-1)
+                                        {
+                                            terminal.substate = 0;
+                                            terminal.state = 1;
+                                            terminal.combat_log.push_back("Enemy: Attack");
+                                            break;
+                                        }
+                                        terminal.combat_log.push_back("Enemy: Attack");
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                            case 3:
+                            {
+                                switch(input)
+                                {
+                                    case '\n':
+                                    {
+                                        terminal.combat_log.clear();
+                                        terminal.submenu = 0;
+                                        terminal.substate = 0;
+                                        terminal.state = 0;
+                                        break;
+                                    }
+                                }
+                                break;
                             }
                         }
                         break;
