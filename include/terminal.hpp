@@ -18,7 +18,7 @@ class TerminalClass
     unsigned int menu;
     unsigned int submenu;
     unsigned int state;
-    unsigned int substate;
+    int substate;
     int slot;
 
     std::vector <std::string> combat_log {};
@@ -270,11 +270,36 @@ class TerminalClass
                     }
                     case 4: // COMBAT
                     {
+                        /*
                         wmove(win_main,0,0);
-                        for(int i = 0; i < combat_log.size(); i++)
+                        
+                        int size = scr_height-4;
+                        int logs = size;
+                        if(combat_log.size()<size)
+                        {
+                            logs = combat_log.size();
+                        }
+                        for(int i = size-logs; i < logs; i++)
                         {
                             wprintw(win_main,"%s %c",combat_log[i].c_str(), '\n');
                         }
+                        */
+
+                        int pos = scr_height-6;
+                        for(int i = combat_log.size()-1; i >= 0 ; i--)
+                        {
+                            if(pos >= 0)
+                            {
+                                mvwprintw(win_main,pos,0,"%s",combat_log[i].c_str());
+                                // cut before it gets to \n
+                                pos -= 1;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        
 
                         switch(state)
                         {

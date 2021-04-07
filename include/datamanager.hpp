@@ -301,21 +301,21 @@ class DataManager
             return(true);
         }
 
-        int player_get_aggro(std::vector <PlayerStruct> characters)
+        int player_get_aggro()
         {
             int sum_of_weight = 0;
-            for(int i=0; i<characters.size(); i++)
+            for(int i=0; i<game.characters.size(); i++)
             {
-                sum_of_weight += characters[i].stats.aggro;
+                sum_of_weight += game.characters[i].stats.aggro;
             }
             int rnd = random() % sum_of_weight;
-            for(int i=0; i<characters.size(); i++)
+            for(int i=0; i<game.characters.size(); i++)
             {
-                if(rnd < characters[i].stats.aggro)
+                if(rnd < game.characters[i].stats.aggro)
                 {
                     return i;
                 }
-                rnd -= characters[i].stats.aggro;
+                rnd -= game.characters[i].stats.aggro;
             }
             return -1;
         }

@@ -1,10 +1,12 @@
 {
     "wood": {
         "name": "Wood",
-        "stack": 32
+        "stack": 32,
+        "tags": [ ]
     },
     "test": {
         "name": "Test",
-        "stack": 2
+        "stack": 2,
+        "tags": [ ]
     }
 }

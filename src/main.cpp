@@ -435,17 +435,17 @@ int main()
                                             terminal.state = 3;
                                             break;
                                         }
+                                        // Logic
+                                        std::string say = "Party " + std::to_string(terminal.substate+1) + ": Attack ";
+                                        terminal.combat_log.push_back(say);
+
                                         terminal.substate += 1;
                                         if(terminal.substate > data.game.characters.size()-1)
                                         {
                                             terminal.substate = 0;
                                             terminal.state = 2;
-                                            terminal.combat_log.push_back("Party: Attack");
                                             break;
                                         }
-
-                                        // Logic
-                                        terminal.combat_log.push_back("Party: Attack");
                                         break;
                                     }
                                 }
@@ -463,15 +463,18 @@ int main()
                                             terminal.state = 3;
                                             break;
                                         }
+                                        // Logic
+                                        int selected = data.player_get_aggro();
+                                        std::string say = "Enemy " + std::to_string(terminal.substate+1) + ": Attack " + data.game.characters[selected].name;
+                                        terminal.combat_log.push_back(say);
+
                                         terminal.substate += 1;
                                         if(terminal.substate > data.game.enemies.size()-1)
                                         {
                                             terminal.substate = 0;
                                             terminal.state = 1;
-                                            terminal.combat_log.push_back("Enemy: Attack");
                                             break;
                                         }
-                                        terminal.combat_log.push_back("Enemy: Attack");
                                         break;
                                     }
                                 }
