@@ -1,13 +1,8 @@
-Check if party aggro is above creature requirement (in location) to fight
-when attacking creatures below aggro level, all enemies of same type attack
-
 Player uses attacks with hotbar
 
 Enemy attacks (player aggro is chance)
 
 attacking creatures
-
-call father
 
 add item called bag
 bag can store specific item, but more
@@ -16,3 +11,7 @@ medium = x3
 large = x4
 taking oout items is as easy as going to bag, pressing e(empty), and putting amount to remove
 adding items is as easy as going to bag and pressing f(fill) to add amount of items to bag
+
+
+NEW:
+Finish equipment system (equip, unequip, view, etc..)

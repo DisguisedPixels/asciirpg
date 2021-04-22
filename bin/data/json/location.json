@@ -17,7 +17,7 @@
         }
     },
     "other": [
-        {"id": "village_entrance", "creatures": ["zombie"]},
+        {"id": "village_entrance", "creatures": []},
         {"id": "village_square", "creatures": ["zombie","zombie_brute"]},
         {"id": "village_bar", "creatures": []}
     ]

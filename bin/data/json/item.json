@@ -1,4 +1,7 @@
 {
+    "0": {
+        "name": "None"
+    },
     "wood": {
         "name": "Wood",
         "stack": 32,
@@ -7,6 +10,16 @@
     "test": {
         "name": "Test",
         "stack": 2,
+        "tags": [ ]
+    },
+    "sword": {
+        "name": "Sword",
+        "stack": 1,
+        "tags": [ ]
+    },
+    "helmet": {
+        "name": "Helmet",
+        "stack": 1,
         "tags": [ ]
     }
 }

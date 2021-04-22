@@ -37,6 +37,7 @@ struct PlayerStruct
     unsigned int level;
     std::vector <ItemStruct> inventory {};
     ItemStruct hotbar[6];
+    std::map <std::string, ItemStruct> equipment {};
     unsigned int inventory_max;
     PlayerStatsStruct stats;
 };
@@ -56,6 +57,7 @@ struct SaveGameStruct
     std::map <std::string, LocationStruct> locations {};
     unsigned int current_char;
     std::string location;
+    std::string location_old;
     int temp_data[10];
 };
 
@@ -104,6 +106,7 @@ class DataManager
         bool summon_creature(std::string &location, const std::string &id)
         {
             game.locations[location].creatures.push_back({id});
+            return true;
         }
 
         bool combat_enemy(const std::string &id)
@@ -111,6 +114,7 @@ class DataManager
             int health = json2int(json.entity[id]["health"]);
             int strength = json2int(json.entity[id]["strength"]);
             game.enemies.push_back({id,health,strength});
+            return true;
         }
 
         int enemy_check()
@@ -156,8 +160,9 @@ class DataManager
             }
         }
 
-        bool item_add(std::string id, unsigned int amount, unsigned int stack)
+        bool item_add(std::string id, unsigned int amount)
         {
+            unsigned int stack = json2int(json.item[id]["stack"]);
             unsigned int free = 0;
             free += (game.characters[game.current_char-1].inventory_max - game.characters[game.current_char-1].inventory.size())*stack;
             for(int i = 0;i<game.characters[game.current_char-1].inventory.size(); i++)
@@ -323,9 +328,7 @@ class DataManager
         void save_init(const std::string& savename)
         {
             game.id = savename;
-            game.characters.push_back((struct PlayerStruct){"Guy1",1,{{"wood",15},{"test",1},{"wood",4}},{{"none",1},{"none",1},{"none",1},{"none",1},{"none",1},{"sword",1}},5,{20,20,20,20,1,0,30,30,0,1,0,50}});
-            game.characters.push_back((struct PlayerStruct){"Guy2",1,{{"wood",15},{"test",1},{"wood",4}},{{"none",1},{"none",1},{"none",1},{"none",1},{"none",1},{"sword",1}},5,{20,20,20,20,1,0,30,30,0,1,0,30}});
-            game.characters.push_back((struct PlayerStruct){"Guy3",1,{{"wood",15},{"test",1},{"wood",4}},{{"none",1},{"none",1},{"none",1},{"none",1},{"none",1},{"sword",1}},5,{20,20,20,20,1,0,30,30,0,1,0,10}});
+            game.characters.push_back((struct PlayerStruct){"Guy1",1,{{"wood",15},{"test",1},{"wood",4}},{{"wood",1},{"sword",1},{"0",1},{"sword",1},{"0",1},{"wood",1}},{{"head",{"sword",1}},{"chest",{"0",1}},{"legs",{"0",1}},{"feet",{"sword",1}},{"waist",{"0",1}}},5,{20,20,20,20,1,0,30,30,0,1,0,50}});
 
             for(int i = 0; i < json.location["other"].size(); i++)
             {
@@ -340,5 +343,6 @@ class DataManager
 
             game.current_char = 1;
             game.location = "village_entrance";
+            game.location_old = "village_entrance";
         }
 };

@@ -21,6 +21,8 @@ class TerminalClass
     int substate;
     int slot;
 
+    int gametime = 0;
+
     std::vector <std::string> combat_log {};
 
     const unsigned int ms = 1000000;
@@ -65,7 +67,7 @@ class TerminalClass
         pause = false;
 
         menu = 1;
-        submenu = 0;
+        submenu = 5;
         state = 0;
         substate = 0;
         slot = 0;
@@ -159,14 +161,14 @@ class TerminalClass
                 PlayerStruct current_char = data.characters[data.current_char-1];
 
                 mvwprintw(win_bar,0,0,"ASCII RPG | Profile: %s | Party: (%d/%d)", data.id.c_str(),data.characters.size(),char_max);
-                mvwprintw(win_bar,1,0,"%s LVL%d | Hotbar: %s %s %s %s %s %s", current_char.name.c_str(),current_char.level,current_char.hotbar[0].id.c_str(),current_char.hotbar[1].id.c_str(),current_char.hotbar[2].id.c_str(),current_char.hotbar[3].id.c_str(),current_char.hotbar[4].id.c_str(),current_char.hotbar[5].id.c_str());
+                mvwprintw(win_bar,1,0,"%s LVL%d | Hotbar: %s, %s, %s, %s, %s, %s", current_char.name.c_str(),current_char.level,current_char.hotbar[0].id.c_str(),current_char.hotbar[1].id.c_str(),current_char.hotbar[2].id.c_str(),current_char.hotbar[3].id.c_str(),current_char.hotbar[4].id.c_str(),current_char.hotbar[5].id.c_str());
 
                 std::string location_1 = json2str(json.location["data"][data.location]["name"][0]);
                 std::string location_2 = json2str(json.location["data"][data.location]["name"][1]);
                 std::string location_3 = json2str(json.location["data"][data.location]["name"][2]);
                 unsigned int size = location_1.size() + location_2.size() + location_3.size() + 8;
-                
-                mvwprintw(win_bar,0,scr_width-std::to_string(tick).length()-11,"Elapsed: %d",tick);
+
+                mvwprintw(win_bar,0,scr_width-(std::to_string(tick).length() + std::to_string(gametime).length())-20,"Turn: %d | Elapsed: %d",gametime,tick);
                 mvwprintw(win_bar,1,scr_width-size,"%s / %s / %s",location_1.c_str(),location_2.c_str(),location_3.c_str());
 
                 // DETAIL
@@ -178,9 +180,11 @@ class TerminalClass
 
                         mvwprintw(win_side,2,0,"ESC: Menu");
                         mvwprintw(win_side,3,0,"ENTER: Terminal");
-                        mvwprintw(win_side,4,0,"C: Character Menu");
-                        mvwprintw(win_side,5,0,"T: Travel Menu");
-                        mvwprintw(win_side,6,0,"I: Inventory");
+                        mvwprintw(win_side,4,0,"SPACE: Wait");
+                        mvwprintw(win_side,5,0,"C: Character Menu");
+                        mvwprintw(win_side,6,0,"T: Travel Menu");
+                        mvwprintw(win_side,7,0,"I: Inventory");
+                        mvwprintw(win_side,8,0,"E: Equipment");
                         break;
                     }
                     case 1: // CHARACTER SELECT
@@ -290,7 +294,12 @@ class TerminalClass
                         {
                             if(pos >= 0)
                             {
-                                mvwprintw(win_main,pos,0,"%s",combat_log[i].c_str());
+                                std::string tmp = combat_log[i];
+                                if(tmp.size() > scr_width-31)
+                                {
+                                    tmp.erase(scr_width-31);
+                                }
+                                mvwprintw(win_main,pos,0,"%s",tmp.c_str());
                                 // cut before it gets to \n
                                 pos -= 1;
                             }
@@ -305,29 +314,69 @@ class TerminalClass
                         {
                             case 0: // INIT
                             {
-                                mvwprintw(win_side,0,0,"Combat/INIT");
+                                mvwprintw(win_side,0,0,"Combat: Start");
 
-                                mvwprintw(win_side,2,0,"ENTER: Continue");
+                                mvwprintw(win_side,2,0,"\\n: Continue");
                                 break;
                             }
                             case 1: // PARTY
                             {
-                                mvwprintw(win_side,0,0,"Combat/Party (%d/%d)",substate+1,data.characters.size());
+                                mvwprintw(win_side,0,0,"Combat: Party (%d/%d)",substate+1,data.characters.size());
                                 mvwprintw(win_side,1,1,"| %s [%d/%d]",data.characters[substate].name.c_str(),data.characters[substate].stats.health,data.characters[substate].stats.health_max);
+                                mvwprintw(win_side,3,1,"\\n:Skip");
+                                mvwprintw(win_side,4,1,"E:Excape");
+                                mvwprintw(win_side,4,1,"A:Attack");
                                 break;
                             }
                             case 2: // ENEMY
                             {
-                                mvwprintw(win_side,0,0,"Combat/Enemy (%d/%d)", substate+1, data.enemies.size());
+                                mvwprintw(win_side,0,0,"Combat: Enemy (%d/%d)", substate+1, data.enemies.size());
                                 mvwprintw(win_side,1,1,"| %s [%d/%d]",json2str(json.entity[data.enemies[substate].id]["name"]).c_str(),data.enemies[substate].health,json2int(json.entity[data.enemies[substate].id]["health"]));
+                                mvwprintw(win_side,3,1,"\\n:Continue");
                                 break;
                             }
                             case 3: // DEINIT
                             {
-                                mvwprintw(win_side,0,0,"Combat/Complete");
+                                mvwprintw(win_side,0,0,"Combat: Complete");
+
+                                mvwprintw(win_side,2,0,"\\n: Continue");
                                 break;
                             }
                         }
+                        break;
+                    }
+                    case 5: // EQUIPMENT
+                    {
+                        mvwprintw(win_side,0,0,"Equipment");
+
+                        mvwprintw(win_side,2,0,"ESC: Back");
+                        mvwprintw(win_side,3,0,"h: Remove Hotbar Slot");
+                        mvwprintw(win_side,4,0,"e: Remove Equipment Slot");
+                        
+
+                        mvwprintw(win_main,0,0,"Hotbar:");
+                        for(int i = 0; i < 6; i++)
+                        {
+                            if(data.characters[data.current_char-1].hotbar[i].id != "0")
+                            {
+                                mvwprintw(win_main,1+i,0,"%d: %s",i+1,json2str(json.item[data.characters[data.current_char-1].hotbar[i].id]["name"]).c_str());
+
+                            mvwprintw(win_main,1+i,21-count_digit(data.characters[data.current_char-1].hotbar[i].amount),"x%d",data.characters[data.current_char-1].hotbar[i].amount);
+                            }
+                            else
+                            {
+                                mvwprintw(win_main,1+i,0,"%d: None",i+1);
+                            }
+                        }
+
+
+                        std::map <std::string, ItemStruct> equipment = data.characters[data.current_char-1].equipment;
+                        mvwprintw(win_main,0,24,"Equipment:");
+                        mvwprintw(win_main,1,24,"1: Head:  %s",json2str(json.item[equipment["head"].id]["name"]).c_str());
+                        mvwprintw(win_main,2,24,"2: Chest: %s",json2str(json.item[equipment["chest"].id]["name"]).c_str());
+                        mvwprintw(win_main,3,24,"3: Legs:  %s",json2str(json.item[equipment["legs"].id]["name"]).c_str());
+                        mvwprintw(win_main,4,24,"4: Feet:  %s",json2str(json.item[equipment["feet"].id]["name"]).c_str());
+                        mvwprintw(win_main,5,24,"5: Waist: %s",json2str(json.item[equipment["waist"].id]["name"]).c_str());
                         break;
                     }
                 }
@@ -354,7 +403,6 @@ class TerminalClass
     {
         return int(log10(number) + 1);
     }
-
 
     int get_key()
     {
@@ -389,6 +437,7 @@ class TerminalClass
 
     void travel_to(DataManager &data, std::string &name)
     {
+        data.game.location_old = data.game.location;
         Json::Value current_location = json.location["data"][name];
         data.game.location = json2str(current_location["location"][2]);
         //data.enemy_check(data.game.locations[data.game.location]);

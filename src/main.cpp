@@ -7,6 +7,11 @@ TerminalClass terminal;
 DataManager data;
 JsonData json;
 
+void time_pass(int amount)
+{
+    terminal.gametime += amount;
+}
+
 void game_tick()
 {
     while(terminal.running)
@@ -111,9 +116,19 @@ int main()
                                 terminal.submenu = 2;
                                 break;
                             }
+                            case ' ':
+                            {
+                                time_pass(1);
+                                break;
+                            }
                             case 'i':
                             {
                                 terminal.submenu = 3;
+                                break;
+                            }
+                            case 'e':
+                            {
+                                terminal.submenu = 5;
                                 break;
                             }
                             case '\n':
@@ -169,6 +184,7 @@ int main()
                                         {
                                             if(connections[i][0] == result[1])
                                             {
+                                                time_pass(1);
                                                 std::string name = json2str(json.location["data"][data.game.location]["connect"][i][0]);
                                                 terminal.travel_to(data,name);
                                                 break;
@@ -292,6 +308,7 @@ int main()
                             {
                                 if(terminal.slot != 0)
                                 {
+                                    time_pass(1);
                                     std::string name = json2str(json.location["data"][data.game.location]["connect"][terminal.slot-1][0]);
                                     terminal.travel_to(data,name);
                                 }
@@ -330,6 +347,7 @@ int main()
                             {
                                 if(terminal.slot != 0 and terminal.slot != data.game.characters[data.game.current_char-1].inventory.size())
                                 {
+                                    time_pass(1);
                                     std::swap(data.game.characters[data.game.current_char-1].inventory[terminal.slot],data.game.characters[data.game.current_char-1].inventory[terminal.slot-1]);
                                 }
                                 break;
@@ -338,6 +356,7 @@ int main()
                             {
                                 if(terminal.slot >= 2)
                                 {
+                                    time_pass(1);
                                     std::swap(data.game.characters[data.game.current_char-1].inventory[terminal.slot-2],data.game.characters[data.game.current_char-1].inventory[terminal.slot-1]);
                                 }
                                 break;
@@ -346,9 +365,10 @@ int main()
                             {
                                 if(terminal.slot > 0)
                                 {
+                                    time_pass(1);
                                     ItemStruct item = data.game.characters[data.game.current_char-1].inventory[terminal.slot-1];
                                     data.item_remove_slot(terminal.slot-1);
-                                    data.item_add(item.id,item.amount,json2int(json.item[item.id]["stack"]));
+                                    data.item_add(item.id,item.amount);
                                     if(terminal.slot > data.game.characters[data.game.current_char-1].inventory.size())
                                     {
                                         terminal.slot-=1;
@@ -366,6 +386,7 @@ int main()
                                         int val2 = stoi(val);
                                         if(data.game.characters[data.game.current_char-1].inventory[terminal.slot-1].amount > val2)
                                         {
+                                            time_pass(1);
                                             data.game.characters[data.game.current_char-1].inventory[terminal.slot-1].amount -= val2;
                                             data.game.characters[data.game.current_char-1].inventory.push_back({data.game.characters[data.game.current_char-1].inventory[terminal.slot-1].id,(unsigned int)val2});
                                             terminal.slot = data.game.characters[data.game.current_char-1].inventory.size();
@@ -378,6 +399,7 @@ int main()
                             {
                                 if(terminal.slot > 0)
                                 {
+                                    time_pass(1);
                                     data.item_remove_slot(terminal.slot-1);
                                     terminal.slot -= 1;
                                 }
@@ -395,6 +417,7 @@ int main()
                                             ItemStruct item = data.game.characters[data.game.current_char-1].inventory[terminal.slot-1];
                                             if(data.item_add_char(item.id,item.amount,json2int(json.item[item.id]["stack"]),i))
                                             {
+                                                time_pass(1);
                                                 data.item_remove_slot(terminal.slot-1);
                                                 terminal.slot -= 1;
                                             }
@@ -436,7 +459,7 @@ int main()
                                             break;
                                         }
                                         // Logic
-                                        std::string say = "Party " + std::to_string(terminal.substate+1) + ": Attack ";
+                                        std::string say = "Party " + std::to_string(terminal.substate+1) + ": Skipped";
                                         terminal.combat_log.push_back(say);
 
                                         terminal.substate += 1;
@@ -446,6 +469,14 @@ int main()
                                             terminal.state = 2;
                                             break;
                                         }
+                                        break;
+                                    }
+                                    case 'e':
+                                    {
+                                        // DUNNO WHY THIS DOESNT WORK
+                                        std::swap(data.game.location,data.game.location_old);
+                                        terminal.substate = 0;
+                                        terminal.state = 3;
                                         break;
                                     }
                                 }
@@ -463,6 +494,7 @@ int main()
                                             terminal.state = 3;
                                             break;
                                         }
+
                                         // Logic
                                         int selected = data.player_get_aggro();
                                         std::string say = "Enemy " + std::to_string(terminal.substate+1) + ": Attack " + data.game.characters[selected].name;
@@ -471,6 +503,7 @@ int main()
                                         terminal.substate += 1;
                                         if(terminal.substate > data.game.enemies.size()-1)
                                         {
+                                            time_pass(1);
                                             terminal.substate = 0;
                                             terminal.state = 1;
                                             break;
@@ -487,10 +520,85 @@ int main()
                                     case '\n':
                                     {
                                         terminal.combat_log.clear();
+                                        data.game.enemies.clear();
+                                        time_pass(1);
                                         terminal.submenu = 0;
                                         terminal.substate = 0;
                                         terminal.state = 0;
                                         break;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case 5: // EQUIPMENT
+                    {
+                        switch(input)
+                        {
+                            case 27:
+                            {
+                                terminal.submenu = 0;
+                                break;
+                            }
+                            case 'h':
+                            {
+                                char slot = terminal.get_key();
+                                if((int)slot >= 49 and (int)slot <= 54);
+                                {
+                                    if(data.game.characters[data.game.current_char-1].hotbar[(int)slot-49].id != "0")
+                                    {
+                                        if(data.item_add(data.game.characters[data.game.current_char-1].hotbar[(int)slot-49].id,data.game.characters[data.game.current_char-1].hotbar[(int)slot-49].amount))
+                                        {
+                                            time_pass(1);
+                                            data.game.characters[data.game.current_char-1].hotbar[(int)slot-49] = {"0",1};
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case 'e':
+                            {
+                                char slot = terminal.get_key();
+                                if((int)slot >= 49 and (int)slot <= 53);
+                                {
+                                    std::string selected_slot;
+                                    switch(slot)
+                                    {
+                                        case 49:
+                                        {
+                                            selected_slot = "head";
+                                            break;
+                                        }
+                                        case 50:
+                                        {
+                                            selected_slot = "chest";
+                                            break;
+                                        }
+                                        case 51:
+                                        {
+                                            selected_slot = "legs";
+                                            break;
+                                        }
+                                        case 52:
+                                        {
+                                            selected_slot = "feet";
+                                            break;
+                                        }
+                                        case 53:
+                                        {
+                                            selected_slot = "waist";
+                                            break;
+                                        }
+                                    }
+                                    if(data.game.characters[data.game.current_char-1].equipment[selected_slot].id != "0")
+                                    {
+                                        if(data.item_add(data.game.characters[data.game.current_char-1].equipment[selected_slot].id,data.game.characters[data.game.current_char-1].equipment[selected_slot].amount))
+                                        {
+                                            time_pass(1);
+                                            data.game.characters[data.game.current_char-1].equipment[selected_slot] = {"0",1};
+                                        }
                                     }
                                 }
                                 break;
