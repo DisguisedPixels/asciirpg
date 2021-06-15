@@ -329,6 +329,7 @@ class DataManager
         {
             game.id = savename;
             game.characters.push_back((struct PlayerStruct){"Guy1",1,{{"wood",15},{"test",1},{"wood",4}},{{"wood",1},{"sword",1},{"0",1},{"sword",1},{"0",1},{"wood",1}},{{"head",{"sword",1}},{"chest",{"0",1}},{"legs",{"0",1}},{"feet",{"sword",1}},{"waist",{"0",1}}},5,{20,20,20,20,1,0,30,30,0,1,0,50}});
+            game.characters.push_back((struct PlayerStruct){"Guy2",1,{{"wood",15},{"test",1},{"wood",4}},{{"wood",1},{"sword",1},{"0",1},{"sword",1},{"0",1},{"wood",1}},{{"head",{"sword",1}},{"chest",{"0",1}},{"legs",{"0",1}},{"feet",{"sword",1}},{"waist",{"0",1}}},5,{20,20,20,20,1,0,30,30,0,1,0,50}});
 
             for(int i = 0; i < json.location["other"].size(); i++)
             {

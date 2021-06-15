@@ -1,0 +1,30 @@
+{
+    "test": {
+        "name": "Test Quest",
+        "npc":"bartender",
+        "description":"Talk to the bartender, in the Bar!",
+        "start_msg":"Thanks for taking the job. You wont regret this!",
+        "end_msg":"Here. Take these!",
+        "rewards": {
+            "coins":0,
+            "xp":0,
+            "items":[["beer",1],["wood",3]],
+            "recipes":["test","test2"]
+        },
+        "quest":[
+            {
+                "msg": "",
+                "type":"node",
+                "node":"this.is.a.node.tree",
+                "req":["above",3]
+            },
+            {
+                "msg": "",
+                "type":"item",
+                "item":["wood",3],
+                "npc":"bartender",
+                "remove":true
+            }
+        ]
+    }
+}

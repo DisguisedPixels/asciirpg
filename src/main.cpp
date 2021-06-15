@@ -50,8 +50,6 @@ int main()
 
     terminal.setup();
 
-    
-
     std::thread tick_thread (game_tick);
     tick_thread.detach();
 
@@ -441,10 +439,8 @@ int main()
                                     {
                                         terminal.combat_log.clear();
                                         terminal.state = 1;
-                                        break;
                                     }
                                 }
-                                break;
                             }
                             case 1:
                             {

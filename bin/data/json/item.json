@@ -20,6 +20,6 @@
     "helmet": {
         "name": "Helmet",
         "stack": 1,
-        "tags": [ ]
+        "tags": [ "helmet" ]
     }
 }

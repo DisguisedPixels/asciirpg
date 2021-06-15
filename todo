@@ -15,3 +15,44 @@ adding items is as easy as going to bag and pressing f(fill) to add amount of it
 
 NEW:
 Finish equipment system (equip, unequip, view, etc..)
+
+
+on world create, ask if game is creative or normal
+creative mode gets cheats (nodeath, get item, goto location, givexp)
+
+
+
+
+
+
+
+
+
+
+
+
+### QUESTS ###
+
+when talking to an npc, check if a quest is being operated by the npc.
+if the player is completing a quest by the npc, display a menu showing the start_msg and specific task.
+add an option to talk to the npc normally, or leave
+
+activate quests by talking to an npc, by going through specific dialogue
+end quests by talking to the specfic npc
+
+when an objective is complete, move on to the next one
+objective types can be a node (when an event is created, it will send a node with info)
+                       an item (return items to npc)
+
+node types:
+  get.item: checks if player picked up items
+  kill.creature: checks when player kills a creature
+  damage.creature: checks when player damages a creature, add damage to value
+  explore.specific.location: checks when the player enters a location
+  explore.new.location: checks when the player enters a location, and adds it to array if it doesnt exist. stores all areas, and can be used to check if player explored significant area
+  buy.item
+  sell.item
+  craft.item
+  talk.npc
+  getxp.level
+  getxp.skill.skillname

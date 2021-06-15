@@ -66,8 +66,8 @@ class TerminalClass
         running = true;
         pause = false;
 
-        menu = 1;
-        submenu = 5;
+        menu = 0;
+        submenu = 0;
         state = 0;
         substate = 0;
         slot = 0;
@@ -194,9 +194,9 @@ class TerminalClass
                         mvwprintw(win_side,2,0,"ESC: Back");
                         mvwprintw(win_side,3,0,"/\\: Up");
                         mvwprintw(win_side,4,0,"\\/: Down");
-                        mvwprintw(win_side,5,0,"W: Item Up");
-                        mvwprintw(win_side,6,0,"S: Item Down");
-                        mvwprintw(win_side,7,0,"S: Select");
+                        mvwprintw(win_side,5,0,"W: Char Up");
+                        mvwprintw(win_side,6,0,"S: Char Down");
+                        mvwprintw(win_side,7,0,"C: Select");
                         mvwprintw(win_side,8,0,"R: Rename");
                         mvwprintw(win_side,9,0,"D: Delete");
 
@@ -295,10 +295,18 @@ class TerminalClass
                             if(pos >= 0)
                             {
                                 std::string tmp = combat_log[i];
+
+                                int txt_size = scr_width-31;
+                                int txt_height = (int)(tmp.size()-1) / txt_size;
+
+                                /*
                                 if(tmp.size() > scr_width-31)
                                 {
                                     tmp.erase(scr_width-31);
                                 }
+                                */
+                               
+                                pos -= txt_height;
                                 mvwprintw(win_main,pos,0,"%s",tmp.c_str());
                                 // cut before it gets to \n
                                 pos -= 1;

@@ -1,0 +1,11 @@
+{
+    "test": {
+        "name": "Crafting Recipe",
+        "bench":"carpentry",
+        "level_req":3,
+        "stats_req":[["carpentry",5],["foraging",3]],
+        "input": [["wood",2]],
+        "output":[["stick",5]],
+        "xp_gain":[["carpentry",10]]
+    }
+}
