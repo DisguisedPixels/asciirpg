@@ -24,7 +24,123 @@ creative mode gets cheats (nodeath, get item, goto location, givexp)
 
 
 
+task speed is the time it takes to do any action (default: 100)
+when the player is completing a task that takes time:
+    time = time/(task_speed/100)
 
+
+
+
+
+
+### SKILLS ###
+
+each character has a multitude of stats
+each stat effects the player positively, when they level up in that specific stat
+example: combat gives more crit damage
+         defence gives more defence
+         constitution gives more max health
+         woodcutting gives more strength
+         carpentry gives more inteligence and task speed
+
+some game mechanics require a stat to be above a specific level
+
+stat xp can be gained from different activities
+example: gain combat xp from killing creatures
+         gain defence xp from taking damage
+         gain constitution xp from staying in battle for longer
+         gain woodcutting xp from cutting trees
+         gain carpentry xp from crafting items
+
+##############
+
+
+
+
+
+
+### COMBAT REWORK ###
+
+each creature and character has an initiative stat
+whoever has the highest initiative, starts first
+the list is created from highest initiative to lowest
+
+go through everyone in the list, and they will use their action
+repeat through the list
+
+if someone dies, remove them from the list
+
+when the list doesnt have any characters or creatures, the fight ends
+
+#####################
+
+
+
+
+
+
+### EFFECTS ###
+
+an effect can be given to a character or creature
+the effect will have a specific time until it stops
+each turn, the value lowers
+
+each effect has a power value, that increases the effects
+
+there are different types of effects:
+    turn based: an event happens every turn
+    event based: an event is modified by the effect
+    unlock: the effect unlocks a specific game mechanic
+
+effects:
+    strength: multiplies damage dealt by 1.2x (event based)
+    weakness: multiplies damage dealt by 0.8x (event based)
+    poison: multiplies damage taken by 1.2x (event based)
+
+###############
+
+
+
+
+
+
+### LEVEL ###
+
+each character has a level
+the player gets xp from nearly every activity
+leveling up is more dificult than leveling up skills
+
+each level, the player gets better stats, unlocks, etc..
+    +10 Aggro
+
+the player also gets a skill point, and can be applied on any skill to increase xp gain by 1.2x (stackable)
+
+#############
+
+
+
+
+
+
+### CRAFTING ###
+
+the party has a vector of unlocked crafting recipes
+new recipes can be gained from blueprints, quests, buying, leveling up, searching locations, enemies, etc..
+
+the crafting menu displays the first 20 recipes, and has a page system to scroll
+you can alternatively search for the recipes
+
+when crafting, it will check if the player meets the requirements, is at the correct bench, has the items, has inventory space, etc..
+
+after crafting, you will gain xp
+
+some recipes have a wait time
+
+you can craft multiple items at same time (if there is a wait time, combine the time)
+
+some recipes have item requirements, that arent removed after a craft
+
+#################
 
 
 
@@ -56,3 +172,5 @@ node types:
   talk.npc
   getxp.level
   getxp.skill.skillname
+
+##############
